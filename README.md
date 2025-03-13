@@ -10,7 +10,7 @@ Add `imgui-knobs.cpp` and `imgui-knobs.h` to your project and include `imgui-kno
 ```cpp
 static float value = 0;
 
-if (ImGuiKnobs::Knob("Volume", &value, -6.0f, 6.0f, 0.1f, "%.1fdB", ImGuiKnobVariant_Tick)) {
+if (ImGuiKnobs::Knob("Volume", &value, -6.0f, 6.0f, 0.1f, "%.1fdB", ImGuiKnobs::Variant::Tick)) {
     // value was changed
 }
 ```
@@ -25,7 +25,7 @@ bool ImGuiKnobs::KnobInt(label, *value, min, max, [speed, format, variant, size,
 You can implement **double click to reset** using standard imgui functionality:
 
 ```cpp
-ImGuiKnobs::Knob("Volume", &value, -6.0f, 6.0f, 0.1f, "%.1fdB", ImGuiKnobVariant_Tick);
+ImGuiKnobs::Knob("Volume", &value, -6.0f, 6.0f, 0.1f, "%.1fdB", ImGuiKnobs::Variant::Tick);
 
 // Double click to reset, must be directly after drawing the knob so the right imgui "item" is used
 if (ImGui::IsItemActive() && ImGui::IsMouseDoubleClicked(0)) {
