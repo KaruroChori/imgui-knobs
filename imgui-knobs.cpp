@@ -1,11 +1,10 @@
-#include "imgui-knobs.h"
+#include "ui/imgui/knobs.hpp"
 
 #include <cmath>
 #include <cstdlib>
-#include <imgui.h>
 #include <imgui_internal.h>
+#include <numbers>
 
-#define IMGUIKNOBS_PI 3.14159265358979323846f
 
 static inline float ImLog(int x) { return ImLog(static_cast<float>(x)); }
 
@@ -40,11 +39,11 @@ namespace ImGuiKnobs {
                  float speed,
                  float _radius,
                  const char *format,
-                 ImGuiKnobFlags flags,
+                 Flags flags,
                  float _angle_min,
                  float _angle_max) {
                 radius = _radius;
-                if (flags & ImGuiKnobFlags_Logarithmic) {
+                if (flags & Flags::Logarithmic) {
                     float v = ImMax(ImMin(*p_value, v_max), v_min);
                     t = (ImLog(ImAbs(v)) - ImLog(ImAbs(v_min))) / (ImLog(ImAbs(v_max)) - ImLog(ImAbs(v_min)));
                 } else {
@@ -59,18 +58,18 @@ namespace ImGuiKnobs {
                 // used, otherwise use the drag direction with the highest delta
                 ImGuiIO &io = ImGui::GetIO();
                 bool drag_vertical =
-                        !(flags & ImGuiKnobFlags_DragHorizontal) &&
-                        (flags & ImGuiKnobFlags_DragVertical || ImAbs(io.MouseDelta[ImGuiAxis_Y]) > ImAbs(io.MouseDelta[ImGuiAxis_X]));
+                        !(flags & Flags::DragHorizontal) &&
+                        (flags & Flags::DragVertical || ImAbs(io.MouseDelta[ImGuiAxis_Y]) > ImAbs(io.MouseDelta[ImGuiAxis_X]));
 
                 auto gid = ImGui::GetID(_label);
                 ImGuiSliderFlags drag_behaviour_flags = 0;
                 if (drag_vertical) {
                     drag_behaviour_flags |= ImGuiSliderFlags_Vertical;
                 }
-                if (flags & ImGuiKnobFlags_AlwaysClamp) {
+                if (flags & Flags::AlwaysClamp) {
                     drag_behaviour_flags |= ImGuiSliderFlags_AlwaysClamp;
                 }
-                if (flags & ImGuiKnobFlags_Logarithmic) {
+                if (flags & Flags::Logarithmic) {
                     drag_behaviour_flags |= ImGuiSliderFlags_Logarithmic;
                 }
                 value_changed = ImGui::DragBehavior(
@@ -83,8 +82,8 @@ namespace ImGuiKnobs {
                         format,
                         drag_behaviour_flags);
 
-                angle_min = _angle_min < 0 ? IMGUIKNOBS_PI * 0.75f : _angle_min;
-                angle_max = _angle_max < 0 ? IMGUIKNOBS_PI * 2.25f : _angle_max;
+                angle_min = _angle_min < 0 ? std::numbers::pi * 0.75f : _angle_min;
+                angle_max = _angle_max < 0 ? std::numbers::pi * 2.25f : _angle_max;
 
                 center = {screen_pos[0] + radius, screen_pos[1] + radius};
                 is_active = ImGui::IsItemActive();
@@ -147,10 +146,10 @@ namespace ImGuiKnobs {
                 float _speed,
                 const char *format,
                 float size,
-                ImGuiKnobFlags flags,
+                Flags flags,
                 float angle_min,
                 float angle_max) {
-            if (flags & ImGuiKnobFlags_Logarithmic && v_min <= 0.0 && v_max >= 0.0) {
+            if (flags & Flags::Logarithmic && v_min <= 0.0 && v_max >= 0.0) {
                 // we must handle the cornercase if a client specifies a logarithmic range that contains zero
                 // for this we clamp lower limit to avoid hitting zero like it is done in ImGui::SliderBehaviorT
                 const bool is_floating_point = (data_type == ImGuiDataType_Float) || (data_type == ImGuiDataType_Double);
@@ -173,7 +172,7 @@ namespace ImGuiKnobs {
             ImGui::GetCurrentWindow()->DC.CurrLineTextBaseOffset = 0;
 
             // Draw title
-            if (!(flags & ImGuiKnobFlags_NoTitle)) {
+            if (!(flags & Flags::NoTitle)) {
                 auto title_size = ImGui::CalcTextSize(label, NULL, false, width);
 
                 // Center title
@@ -187,7 +186,7 @@ namespace ImGuiKnobs {
             knob<DataType> k(label, data_type, p_value, v_min, v_max, speed, width * 0.5f, format, flags, angle_min, angle_max);
 
             // Draw tooltip
-            if (flags & ImGuiKnobFlags_ValueTooltip &&
+            if (flags & Flags::ValueTooltip &&
                 (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled) ||
                  ImGui::IsItemActive())) {
                 ImGui::BeginTooltip();
@@ -196,12 +195,12 @@ namespace ImGuiKnobs {
             }
 
             // Draw input
-            if (!(flags & ImGuiKnobFlags_NoInput)) {
+            if (!(flags & Flags::NoInput)) {
                 ImGuiSliderFlags drag_scalar_flags = 0;
-                if (flags & ImGuiKnobFlags_AlwaysClamp) {
+                if (flags & Flags::AlwaysClamp) {
                     drag_scalar_flags |= ImGuiSliderFlags_AlwaysClamp;
                 }
-                if (flags & ImGuiKnobFlags_Logarithmic) {
+                if (flags & Flags::Logarithmic) {
                     drag_scalar_flags |= ImGuiSliderFlags_Logarithmic;
                 }
                 auto changed = ImGui::DragScalar("###knob_drag", data_type, p_value, speed, &v_min, &v_max, format, drag_scalar_flags);
@@ -254,9 +253,9 @@ namespace ImGuiKnobs {
             DataType v_max,
             float speed,
             const char *format,
-            ImGuiKnobVariant variant,
+            Variant variant,
             float size,
-            ImGuiKnobFlags flags,
+            Flags flags,
             int steps,
             float angle_min,
             float angle_max) {
@@ -274,18 +273,18 @@ namespace ImGuiKnobs {
                 angle_max);
 
         switch (variant) {
-            case ImGuiKnobVariant_Tick: {
+            case Variant::Tick: {
                 knob.draw_circle(0.85f, detail::GetSecondaryColorSet(), true, 32);
                 knob.draw_tick(0.5f, 0.85f, 0.08f, knob.angle, detail::GetPrimaryColorSet());
                 break;
             }
-            case ImGuiKnobVariant_Dot: {
+            case Variant::Dot: {
                 knob.draw_circle(0.85f, detail::GetSecondaryColorSet(), true, 32);
                 knob.draw_dot(0.12f, 0.6f, knob.angle, detail::GetPrimaryColorSet(), true, 12);
                 break;
             }
 
-            case ImGuiKnobVariant_Wiper: {
+            case Variant::Wiper: {
                 knob.draw_circle(0.7f, detail::GetSecondaryColorSet(), true, 32);
                 knob.draw_arc(0.8f, 0.41f, knob.angle_min, knob.angle_max, detail::GetTrackColorSet());
 
@@ -294,7 +293,7 @@ namespace ImGuiKnobs {
                 }
                 break;
             }
-            case ImGuiKnobVariant_WiperOnly: {
+            case Variant::WiperOnly: {
                 knob.draw_arc(0.8f, 0.41f, knob.angle_min, knob.angle_max, detail::GetTrackColorSet());
 
                 if (knob.t > 0.01) {
@@ -302,13 +301,13 @@ namespace ImGuiKnobs {
                 }
                 break;
             }
-            case ImGuiKnobVariant_WiperDot: {
+            case Variant::WiperDot: {
                 knob.draw_circle(0.6f, detail::GetSecondaryColorSet(), true, 32);
                 knob.draw_arc(0.85f, 0.41f, knob.angle_min, knob.angle_max, detail::GetTrackColorSet());
                 knob.draw_dot(0.1f, 0.85f, knob.angle, detail::GetPrimaryColorSet(), true, 12);
                 break;
             }
-            case ImGuiKnobVariant_Stepped: {
+            case Variant::Stepped: {
                 for (auto n = 0.f; n < steps; n++) {
                     auto a = n / (steps - 1);
                     auto angle = knob.angle_min + (knob.angle_max - knob.angle_min) * a;
@@ -319,7 +318,7 @@ namespace ImGuiKnobs {
                 knob.draw_dot(0.12f, 0.4f, knob.angle, detail::GetPrimaryColorSet(), true, 12);
                 break;
             }
-            case ImGuiKnobVariant_Space: {
+            case Variant::Space: {
                 knob.draw_circle(0.3f - knob.t * 0.1f, detail::GetSecondaryColorSet(), true, 16);
 
                 if (knob.t > 0.01f) {
@@ -341,9 +340,9 @@ namespace ImGuiKnobs {
             float v_max,
             float speed,
             const char *format,
-            ImGuiKnobVariant variant,
+            Variant variant,
             float size,
-            ImGuiKnobFlags flags,
+            Flags flags,
             int steps,
             float angle_min,
             float angle_max) {
@@ -370,9 +369,9 @@ namespace ImGuiKnobs {
             int v_max,
             float speed,
             const char *format,
-            ImGuiKnobVariant variant,
+            Variant variant,
             float size,
-            ImGuiKnobFlags flags,
+            Flags flags,
             int steps,
             float angle_min,
             float angle_max) {
